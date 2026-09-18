@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.env*
+!.env.example
+scripts/smoke.ts
+vitest.config.ts
+README.md
+Dockerfile
+docker-compose.yml

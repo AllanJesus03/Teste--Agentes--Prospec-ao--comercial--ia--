@@ -1,0 +1,54 @@
+services:
+  app:
+    build: .
+    container_name: leadscout-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://leadscout:leadscout@postgres:5432/leadscout}
+      AUTH_SECRET: ${AUTH_SECRET:-troque-este-segredo-em-producao}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000/api/auth}
+      MOCK_MODE: ${MOCK_MODE:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: .
+    container_name: leadscout-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://leadscout:leadscout@postgres:5432/leadscout}
+      MOCK_MODE: ${MOCK_MODE:-true}
+    command: sh -c "npx prisma migrate deploy && npx tsx src/workers/runner.ts"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: leadscout-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: leadscout
+      POSTGRES_PASSWORD: leadscout
+      POSTGRES_DB: leadscout
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "leadscout"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

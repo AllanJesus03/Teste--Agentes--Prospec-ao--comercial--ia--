@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Lead {
+  id                   String    @id @default(cuid())
+  instagramUsername    String    @unique
+  instagramUrl         String?
+  businessName         String?
+  category             String?
+  bio                  String?
+  city                 String?
+  state                String?
+  country              String?
+  followers            Int?
+  posts                Int?
+  profilePicUrl        String?
+  websiteUrl           String?
+  externalLinks        String?
+  whatsapp             String?
+  contactEmail         String?
+  contactPhone         String?
+  websiteStatus        String    @default("UNKNOWN")
+  landingPageStatus    String    @default("UNKNOWN")
+  websiteQualityScore  Int?
+  websiteAnalysis      String?
+  websiteNotReachable  Boolean   @default(false)
+  analysisFailed       Boolean   @default(false)
+  commercialScore      Int       @default(0)
+  leadScore            Int       @default(0)
+  leadPriority         String    @default("LOW")
+  leadStatus           String    @default("NEW")
+  salesOpportunity     String?
+  qualificationReasons String?
+  commercialSignals    String?
+  aiAnalysis           String?
+  aiPitch              String?
+  dataSource           String?
+  sourceUrl            String?
+  collectedAt          DateTime?
+  lastCheckedAt        DateTime?
+  optedOut             Boolean   @default(false)
+  optOutReason         String?
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  contacts             Contact[]
+  campaignLeads        CampaignLead[]
+  jobs                 Job[]
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  channel    String
+  message    String
+  status     String   @default("DRAFT")
+  sentAt     DateTime?
+  responseAt DateTime?
+  templateId String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  status      String         @default("DRAFT")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  leads       CampaignLead[]
+}
+
+model CampaignLead {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([campaignId, leadId])
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   @default("first_contact")
+  subject     String?
+  body        String
+  variables   String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Job {
+  id         String    @id @default(cuid())
+  type       String
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status     String    @default("PENDING")
+  attempts   Int       @default(0)
+  priority   Int       @default(0)
+  error      String?
+  payload    String?
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+  updatedAt  DateTime  @updatedAt
+}
+
+model LogEntry {
+  id        String   @id @default(cuid())
+  agent     String
+  level     String   @default("INFO")
+  message   String
+  leadId    String?
+  metadata  String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
